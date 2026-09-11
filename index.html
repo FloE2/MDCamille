@@ -681,16 +681,44 @@
             return;
           }
 
-          // find column keys case-insensitively
+          // find column keys tolerantly (accents, case, spaces, non-breaking spaces)
+          const normalize = (s) => String(s)
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
+            .replace(/\u00A0/g, ' ') // non-breaking space -> space
+            .trim().toLowerCase();
+
           const keys = Object.keys(rows[0]);
-          const findKey = (target) => keys.find(k => k.trim().toLowerCase() === target);
-          const nomKey = findKey('nom');
-          const prenomKey = findKey('prénom') || findKey('prenom');
-          const sexeKey = findKey('sexe');
+          const normKeys = keys.map(k => ({ orig: k, norm: normalize(k) }));
+
+          let prenomHit = normKeys.find(k => k.norm === 'prenom' || k.norm === 'prenoms')
+            || normKeys.find(k => k.norm.includes('prenom'));
+          let prenomKey = prenomHit ? prenomHit.orig : null;
+
+          let nomCandidates = normKeys.filter(k => k.orig !== prenomKey && !k.norm.includes('prenom'));
+          let nomHit = nomCandidates.find(k => k.norm === 'nom')
+            || nomCandidates.find(k => k.norm.includes('nom') || k.norm.includes('eleve') || k.norm.includes('élève'));
+          let nomKey = nomHit ? nomHit.orig : null;
+
+          // Fallback for exports (Pronote, etc.) like: "Élèves" | (en-tête vide) | "Sexe" | ...
+          // where the surname is under a header like "Élèves"/"Nom" and the first name sits in the
+          // very next column, which has no header at all.
+          if (!prenomKey && nomKey) {
+            const nomIdx = keys.indexOf(nomKey);
+            const nextKey = keys[nomIdx + 1];
+            if (nextKey !== undefined) {
+              const nextNorm = normalize(nextKey);
+              const looksBlank = nextNorm === '' || /^__empty/i.test(nextKey) || /^column\s*\d*$/i.test(nextNorm);
+              if (looksBlank) prenomKey = nextKey;
+            }
+          }
+
+          const sexeHit = normKeys.find(k => k.norm === 'sexe' || k.norm === 'genre')
+            || normKeys.find(k => k.norm.includes('sexe') || k.norm.includes('genre'));
+          const sexeKey = sexeHit ? sexeHit.orig : null;
 
           if (!prenomKey) {
             statusEl.className = 'import-status err';
-            statusEl.textContent = 'Colonne "Prénom" introuvable. Vérifie les en-têtes du fichier (Nom / Prénom / Sexe).';
+            statusEl.textContent = `Colonne "Prénom" introuvable. En-têtes détectés dans le fichier : ${keys.join(', ') || '(aucun)'}.`;
             return;
           }
 
