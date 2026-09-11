@@ -750,11 +750,27 @@
     el.textContent = msg;
   }
 
+  function parseFirebaseConfig(raw) {
+    // Try strict JSON first
+    try { return JSON.parse(raw); } catch (e) { /* fall through */ }
+    // Tolerate a pasted JS snippet like: const firebaseConfig = { apiKey: "...", ... };
+    try {
+      let cleaned = raw.trim();
+      const eqIdx = cleaned.indexOf('=');
+      const looksLikeDeclaration = /^\s*(const|let|var)\s+\w+\s*=/.test(cleaned);
+      if (looksLikeDeclaration && eqIdx !== -1) cleaned = cleaned.slice(eqIdx + 1);
+      cleaned = cleaned.trim().replace(/;\s*$/, '');
+      // eslint-disable-next-line no-new-func
+      const obj = new Function('return (' + cleaned + ')')();
+      if (obj && typeof obj === 'object') return obj;
+    } catch (e) { /* fall through */ }
+    return null;
+  }
+
   function connectFirebase(configStr, silent) {
-    let cfg;
-    try { cfg = JSON.parse(configStr); }
-    catch (e) {
-      if (!silent) setFirebaseError('La configuration collée n\'est pas un JSON valide.');
+    const cfg = parseFirebaseConfig(configStr);
+    if (!cfg) {
+      if (!silent) setFirebaseError('Configuration illisible. Colle l\'objet tel qu\'il apparaît dans la console Firebase (avec ou sans "const firebaseConfig =").');
       return;
     }
     loadFirebaseSdk(() => {
