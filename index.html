@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Échelle de Badminton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --court: #17493B; --court-2: #216450; --line: #FBFAF6; --volant: #D9A62E;
+    --ink: #142420; --ink-soft: #4B5C55; --bg: #F1F4EF; --panel: #FFFFFF;
+    --panel-border: #DCE3D8; --danger: #B4472D; --shadow: rgba(20,36,32,0.12);
+    --ok: #2E7D5B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --court:#0E3329; --court-2:#164A3A; --line:#EDEAE0; --volant:#E0B23B;
+      --ink:#EDEFEA; --ink-soft:#B7C2BC; --bg:#0F1613; --panel:#182420;
+      --panel-border:#2A3B34; --danger:#E17356; --shadow:rgba(0,0,0,0.4); --ok:#5FBF95;
+    }
+  }
+  :root[data-theme="dark"] {
+    --court:#0E3329; --court-2:#164A3A; --line:#EDEAE0; --volant:#E0B23B;
+    --ink:#EDEFEA; --ink-soft:#B7C2BC; --bg:#0F1613; --panel:#182420;
+    --panel-border:#2A3B34; --danger:#E17356; --shadow:rgba(0,0,0,0.4); --ok:#5FBF95;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--ink); font-family:'Work Sans',system-ui,sans-serif; -webkit-tap-highlight-color:transparent; }
+  h1,h2,.num { font-family:'Anton','Work Sans',sans-serif; font-weight:400; }
+  .app { max-width: 1150px; margin:0 auto; padding: 16px 16px 60px; }
+
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--court); color:var(--line); border-radius:18px; padding:16px 20px; margin-bottom:14px;
+    position:relative; overflow:hidden; }
+  header::after { content:""; position:absolute; right:-30px; top:-30px; width:150px; height:150px; border:3px solid rgba(251,250,246,0.12); border-radius:50%; }
+  .title-block { position:relative; z-index:1; }
+  .title-block h1 { margin:0; font-size:26px; line-height:1; text-transform:uppercase; }
+  .title-block .hint { font-size:12.5px; opacity:0.85; margin-top:5px; }
+  .header-actions { display:flex; gap:8px; flex-wrap:wrap; position:relative; z-index:1; }
+  .icon-btn { background:rgba(251,250,246,0.14); border:1px solid rgba(251,250,246,0.3); color:var(--line);
+    border-radius:10px; padding:8px 13px; font-family:'Work Sans',sans-serif; font-weight:600; font-size:13px; cursor:pointer; }
+  .icon-btn:hover { background:rgba(251,250,246,0.24); }
+  .icon-btn:disabled { opacity:0.4; cursor:default; }
+  .icon-btn:disabled:hover { background:rgba(251,250,246,0.14); }
+  .status-pill { font-size:11.5px; padding:5px 10px; border-radius:20px; background:rgba(251,250,246,0.14); display:inline-flex; align-items:center; gap:5px; }
+
+  /* Class bar */
+  .class-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .class-pill { background:var(--panel); border:1px solid var(--panel-border); border-radius:20px; padding:8px 14px;
+    font-size:13.5px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .class-pill.active { background:var(--court); color:var(--line); border-color:var(--court); }
+  .class-pill .del { opacity:0.5; font-size:11px; }
+  .class-pill .del:hover { opacity:1; color:var(--danger); }
+  .add-class-btn { background:none; border:1px dashed var(--panel-border); border-radius:20px; padding:8px 14px;
+    font-size:13.5px; font-weight:600; cursor:pointer; color:var(--ink-soft); }
+  .add-class-btn:hover { border-color:var(--volant); color:var(--ink); }
+
+  /* Session bar */
+  .session-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--panel-border); border-radius:12px; padding:10px 14px; margin-bottom:14px; }
+  .session-info { font-size:13px; color:var(--ink-soft); }
+  .session-info b { color:var(--ink); }
+  .session-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .mini-btn { background:var(--bg); border:1px solid var(--panel-border); border-radius:8px; padding:7px 12px;
+    font-size:12.5px; font-weight:600; cursor:pointer; color:var(--ink); }
+  .mini-btn:hover { border-color:var(--volant); }
+  .mini-btn:disabled { opacity: 0.45; cursor: default; }
+
+  .empty { background:var(--panel); border:1px dashed var(--panel-border); border-radius:16px; padding:36px 22px; text-align:center; color:var(--ink-soft); }
+  .empty .shuttle { font-size:38px; display:block; margin-bottom:10px; }
+  .empty button { margin-top:14px; background:var(--volant); color:#2A2107; border:none; border-radius:10px; padding:11px 20px; font-weight:700; font-size:14px; cursor:pointer; }
+
+  .ladder-wrap { overflow-x:auto; padding-bottom:6px; }
+  .ladder { display:flex; gap:12px; align-items:flex-start; min-width:min-content; }
+  .column { background:var(--panel); border:1px solid var(--panel-border); border-radius:14px; min-width:172px; flex:0 0 172px; padding:10px; box-shadow:0 2px 10px var(--shadow); }
+  .column-head { display:flex; align-items:baseline; justify-content:space-between; gap:6px; padding:4px 4px 10px; border-bottom:2px solid var(--bg); margin-bottom:8px; }
+  .column-head .left { display:flex; align-items:baseline; gap:6px; }
+  .column-head .num { font-size:24px; color:var(--court-2); line-height:1; }
+  @media (prefers-color-scheme: dark) { .column-head .num { color:#6FA8CC; } }
+  :root[data-theme="dark"] .column-head .num { color:#6FA8CC; }
+  .column-head .label { font-size:11px; color:var(--ink-soft); }
+  .column-head .count { font-size:12px; font-weight:700; color:var(--ink-soft); background:var(--bg); border-radius:8px; padding:2px 7px; }
+  .chip-list { display:flex; flex-direction:column; gap:6px; min-height:30px; }
+  .chip { background:var(--bg); border:1px solid var(--panel-border); border-radius:9px; padding:10px 11px; font-size:14px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:8px; transition:transform .1s ease, box-shadow .1s ease; }
+  .chip:hover { transform:translateY(-1px); box-shadow:0 3px 8px var(--shadow); border-color:var(--volant); }
+  .chip:active { transform:scale(0.97); }
+  .chip .idx { flex:0 0 auto; min-width:20px; height:20px; border-radius:50%; background:var(--panel-border); color:var(--ink-soft);
+    font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .chip .nm { flex:1; }
+  .chip .arrow { opacity:0.45; font-size:13px; }
+  .col-empty { font-size:12.5px; color:var(--ink-soft); padding:8px 4px; font-style:italic; }
+
+  footer.tip { margin-top:20px; text-align:center; color:var(--ink-soft); font-size:12.5px; }
+
+  .overlay { position:fixed; inset:0; background:rgba(10,15,13,0.5); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .overlay.open { display:flex; }
+  .modal { background:var(--panel); border-radius:16px; padding:22px; max-width:520px; width:100%; max-height:88vh; overflow-y:auto; position:relative; }
+  .modal h2 { margin:0 0 6px; font-size:19px; }
+  .modal .modal-sub { font-size:12.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .modal label { font-size:13px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px; margin-top: 12px;}
+  .modal label:first-of-type { margin-top: 0; }
+  .modal textarea, .modal input[type=text], .modal input[type=file] { width:100%; border:1px solid var(--panel-border); border-radius:10px; padding:9px 10px;
+    font-family:inherit; font-size:14px; background:var(--bg); color:var(--ink); resize:vertical; }
+  .modal-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
+  .btn { border:none; border-radius:10px; padding:10px 16px; font-weight:700; font-size:13.5px; cursor:pointer; }
+  .btn-primary { background:var(--volant); color:#2A2107; }
+  .btn-ghost { background:var(--bg); color:var(--ink); border:1px solid var(--panel-border); }
+  .btn-danger { background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .roster-list { margin-top:6px; border-top:1px solid var(--panel-border); padding-top:10px; max-height: 200px; overflow-y: auto;}
+  .roster-row { display:flex; justify-content:space-between; align-items:center; padding:6px 2px; font-size:13.5px; }
+  .roster-row .rm { color:var(--danger); cursor:pointer; font-size:12px; font-weight:600; }
+  .close-x { position:absolute; top:16px; right:18px; background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft); }
+  hr.sep { border:none; border-top:1px solid var(--panel-border); margin:16px 0; }
+  .import-status { font-size:12.5px; margin-top:8px; }
+  .import-status.ok { color:var(--ok); }
+  .import-status.err { color:var(--danger); }
+
+  .session-history-item { border:1px solid var(--panel-border); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .session-history-item .sh-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .session-history-item .sh-head b { font-size:14px; }
+  .session-history-item .sh-head span { font-size:11.5px; color:var(--ink-soft); }
+  .sh-cols { display:flex; flex-wrap:wrap; gap:6px; }
+  .sh-col { background:var(--bg); border:1px solid var(--panel-border); border-radius:8px; padding:6px 9px; font-size:12px; min-width:90px; }
+  .sh-col b { font-size:12.5px; }
+  .sh-col div.names { color:var(--ink-soft); margin-top:3px; line-height:1.5; }
+
+  @media (max-width: 480px) {
+    .title-block h1 { font-size:20px; }
+    .column { min-width:142px; flex-basis:142px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="title-block">
+      <h1>🏸 Échelle de badminton</h1>
+      <div class="hint">Clique sur un prénom pour valider sa victoire</div>
+    </div>
+    <div class="header-actions">
+      <span class="status-pill" id="dbStatus">💾 local uniquement</span>
+      <button class="icon-btn" id="firebaseBtn">🔌 Base de données</button>
+      <button class="icon-btn" id="undoBtn" disabled>↩️ Annuler</button>
+      <button class="icon-btn" id="manageBtn">⚙️ Gérer</button>
+    </div>
+  </header>
+
+  <div class="class-bar" id="classBar"></div>
+
+  <div id="mainArea"></div>
+
+  <footer class="tip">Un clic sur un prénom = une victoire = on avance d'une colonne. Le numéro à gauche permet de compter d'un coup d'œil les élèves par colonne.</footer>
+</div>
+
+<!-- Manage modal (roster: manual + excel import) -->
+<div class="overlay" id="manageOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeManage">✕</button>
+    <h2>Gérer la classe</h2>
+    <div class="modal-sub" id="manageClassName"></div>
+
+    <label>Ajouter des élèves manuellement (un prénom par ligne)</label>
+    <textarea id="bulkNames" rows="3" placeholder="Léo&#10;Nina&#10;..."></textarea>
+    <div class="modal-actions"><button class="btn btn-primary" id="addBulkBtn">Ajouter</button></div>
+
+    <hr class="sep">
+
+    <label>Importer depuis un fichier Excel (colonnes : Nom / Prénom / Sexe)</label>
+    <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+    <div class="import-status" id="importStatus"></div>
+
+    <hr class="sep">
+    <label>Liste actuelle de la classe (<span id="rosterCount">0</span> élève·s)</label>
+    <div class="roster-list" id="rosterList"></div>
+
+    <hr class="sep">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="renameClassBtn">Renommer la classe</button>
+      <button class="btn btn-danger" id="deleteClassBtn">Supprimer cette classe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sessions history modal -->
+<div class="overlay" id="historyOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeHistory">✕</button>
+    <h2>Historique des séances</h2>
+    <div class="modal-sub" id="historyClassName"></div>
+    <div id="sessionHistoryList"></div>
+  </div>
+</div>
+
+<!-- Firebase modal -->
+<div class="overlay" id="firebaseOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeFirebase">✕</button>
+    <h2>Base de données Firebase</h2>
+    <div class="modal-sub">Sert uniquement à conserver une sauvegarde en ligne de toutes tes classes et séances. Colle ici la configuration de ton projet Firebase (Realtime Database).</div>
+    <label>Configuration Firebase (objet JSON copié depuis la console Firebase)</label>
+    <textarea id="firebaseConfigInput" rows="7" placeholder='{"apiKey": "...", "authDomain": "...", "databaseURL": "https://xxx.firebaseio.com", "projectId": "...", ...}'></textarea>
+    <div class="import-status" id="firebaseStatus"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="connectFirebaseBtn">Connecter</button>
+      <button class="btn btn-danger" id="disconnectFirebaseBtn">Déconnecter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'bw-ladder-pro-v1';
+  const FIREBASE_CFG_KEY = 'bw-ladder-firebase-cfg';
+  const FIREBASE_PATH = 'badminton_ladder_state';
+  const FIREBASE_SDK_VERSION = '10.12.2';
+
+  let state = { classes: {}, currentClassId: null };
+  let selectedClassForManage = null;
+  let fb = { app: null, db: null, connected: false };
+
+  // ---------- persistence ----------
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.classes) state = parsed;
+      }
+    } catch (e) { console.error('Lecture locale impossible', e); }
+  }
+  function saveLocal() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { console.error('Sauvegarde locale impossible', e); }
+  }
+  function saveState() {
+    saveLocal();
+    if (fb.connected && fb.db) {
+      try { fb.db.ref(FIREBASE_PATH).set(state); }
+      catch (e) { console.error('Sauvegarde Firebase impossible', e); }
+    }
+  }
+
+  // ---------- utils ----------
+  function uid() {
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function initialCap(s) { return s ? s.trim().charAt(0).toUpperCase() : ''; }
+  function displayNameFor(prenom, nom) {
+    prenom = (prenom || '').trim();
+    nom = (nom || '').trim();
+    if (nom) return `${prenom} ${initialCap(nom)}.`;
+    return prenom;
+  }
+  function todayLabel() {
+    const d = new Date();
+    return d.toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+
+  // ---------- data model helpers ----------
+  function getClass(classId) { return state.classes[classId]; }
+  function currentClass() { return state.currentClassId ? getClass(state.currentClassId) : null; }
+  function currentSession(cls) {
+    cls = cls || currentClass();
+    if (!cls) return null;
+    return cls.sessions.find(s => s.id === cls.activeSessionId) || null;
+  }
+
+  function createClass(name) {
+    const id = uid();
+    state.classes[id] = {
+      id, name: name || 'Nouvelle classe',
+      roster: {},
+      sessions: [],
+      activeSessionId: null
+    };
+    startNewSession(id, true);
+    state.currentClassId = id;
+    saveState();
+    render();
+  }
+
+  function startNewSession(classId, silent) {
+    const cls = getClass(classId);
+    if (!cls) return;
+    const sessionStudents = {};
+    Object.keys(cls.roster).forEach(sid => { sessionStudents[sid] = { level: 1 }; });
+    const session = {
+      id: uid(),
+      label: todayLabel(),
+      createdAt: Date.now(),
+      students: sessionStudents,
+      history: []
+    };
+    cls.sessions.push(session);
+    cls.activeSessionId = session.id;
+    if (!silent) { saveState(); render(); }
+  }
+
+  function addStudentsToRoster(classId, entries) {
+    // entries: [{prenom, nom, sexe}]
+    const cls = getClass(classId);
+    if (!cls) return 0;
+    const session = currentSession(cls);
+    let added = 0;
+    entries.forEach(e => {
+      const prenom = (e.prenom || '').trim();
+      if (!prenom) return;
+      const nom = (e.nom || '').trim();
+      const sexe = (e.sexe || '').trim();
+      const display = displayNameFor(prenom, nom);
+      // avoid exact duplicate (same display + nom)
+      const exists = Object.values(cls.roster).some(r => r.display === display && r.nom === nom);
+      if (exists) return;
+      const sid = uid();
+      cls.roster[sid] = { prenom, nom, sexe, display };
+      if (session) session.students[sid] = { level: 1 };
+      added++;
+    });
+    return added;
+  }
+
+  function removeStudentFromRoster(classId, studentId) {
+    const cls = getClass(classId);
+    if (!cls) return;
+    delete cls.roster[studentId];
+    const session = currentSession(cls);
+    if (session) delete session.students[studentId];
+  }
+
+  // ---------- ladder logic ----------
+  function studentIdsAtLevel(session, level) {
+    return Object.keys(session.students)
+      .filter(sid => session.students[sid].level === level);
+  }
+  function maxLevel(session) {
+    let m = 1;
+    Object.values(session.students).forEach(s => { if (s.level > m) m = s.level; });
+    return m;
+  }
+  function nameFor(cls, sid) {
+    const r = cls.roster[sid];
+    return r ? r.display : '(élève supprimé)';
+  }
+
+  function onWin(sid) {
+    const cls = currentClass();
+    const session = currentSession(cls);
+    if (!cls || !session || !session.students[sid]) return;
+    const from = session.students[sid].level;
+    session.students[sid].level = from + 1;
+    session.history.push({ sid, from, to: from + 1, ts: Date.now() });
+    if (session.history.length > 200) session.history.shift();
+    saveState();
+    render();
+  }
+
+  function undoLastWin() {
+    const cls = currentClass();
+    const session = currentSession(cls);
+    if (!cls || !session || session.history.length === 0) return;
+    const last = session.history.pop();
+    if (session.students[last.sid]) session.students[last.sid].level = last.from;
+    saveState();
+    render();
+  }
+
+  // ---------- rendering ----------
+  function render() {
+    renderClassBar();
+    renderMain();
+    updateDbStatus();
+  }
+
+  function renderClassBar() {
+    const bar = document.getElementById('classBar');
+    const ids = Object.keys(state.classes);
+    let html = '';
+    ids.forEach(id => {
+      const cls = state.classes[id];
+      const active = id === state.currentClassId;
+      html += `<div class="class-pill ${active ? 'active' : ''}" data-id="${id}">
+        <span class="pill-select">${escapeHtml(cls.name)}</span>
+        <span class="del" data-del="${id}" title="Supprimer">✕</span>
+      </div>`;
+    });
+    html += `<button class="add-class-btn" id="addClassBtn">+ Nouvelle classe</button>`;
+    bar.innerHTML = html;
+
+    bar.querySelectorAll('.pill-select').forEach(el => {
+      el.addEventListener('click', () => {
+        state.currentClassId = el.parentElement.getAttribute('data-id');
+        saveState(); render();
+      });
+    });
+    bar.querySelectorAll('.del').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const id = el.getAttribute('data-del');
+        const cls = state.classes[id];
+        if (!cls) return;
+        if (confirm(`Supprimer la classe "${cls.name}" et tout son historique ? Cette action est irréversible.`)) {
+          delete state.classes[id];
+          if (state.currentClassId === id) {
+            const remaining = Object.keys(state.classes);
+            state.currentClassId = remaining.length ? remaining[0] : null;
+          }
+          saveState(); render();
+        }
+      });
+    });
+    document.getElementById('addClassBtn').addEventListener('click', () => {
+      const name = prompt('Nom de la nouvelle classe (ex: 5eB) :', '');
+      if (name === null) return;
+      createClass(name.trim() || 'Nouvelle classe');
+    });
+  }
+
+  function renderMain() {
+    const main = document.getElementById('mainArea');
+    const cls = currentClass();
+
+    if (!cls) {
+      main.innerHTML = `<div class="empty">
+        <span class="shuttle">🏸</span>
+        <div><b>Aucune classe pour l'instant.</b></div>
+        <div>Crée ta première classe pour démarrer une échelle.</div>
+        <button id="emptyAddClassBtn">Créer une classe</button>
+      </div>`;
+      document.getElementById('emptyAddClassBtn').addEventListener('click', () => {
+        const name = prompt('Nom de la classe (ex: 5eB) :', '');
+        if (name === null) return;
+        createClass(name.trim() || 'Nouvelle classe');
+      });
+      return;
+    }
+
+    const session = currentSession(cls);
+    const rosterCount = Object.keys(cls.roster).length;
+
+    let html = `<div class="session-bar">
+      <div class="session-info">Séance en cours : <b>${escapeHtml(session ? session.label : '—')}</b> · ${rosterCount} élève·s dans la classe</div>
+      <div class="session-actions">
+        <button class="mini-btn" id="newSessionBtn">🆕 Nouvelle séance</button>
+        <button class="mini-btn" id="showHistoryBtn" ${cls.sessions.length <= 1 ? 'disabled' : ''}>📜 Historique des séances</button>
+      </div>
+    </div>`;
+
+    if (rosterCount === 0) {
+      html += `<div class="empty">
+        <span class="shuttle">🏸</span>
+        <div><b>Aucun élève dans "${escapeHtml(cls.name)}".</b></div>
+        <div>Ajoute la liste manuellement ou importe un fichier Excel depuis "Gérer".</div>
+        <button id="emptyAddStudentsBtn">Ajouter les élèves</button>
+      </div>`;
+    } else {
+      html += `<div class="ladder-wrap"><div class="ladder" id="ladder"></div></div>`;
+    }
+
+    main.innerHTML = html;
+
+    document.getElementById('newSessionBtn').addEventListener('click', () => {
+      if (confirm('Démarrer une nouvelle séance ? Tous les élèves repartiront en colonne 1. La séance actuelle sera conservée dans l\'historique.')) {
+        startNewSession(cls.id);
+      }
+    });
+    document.getElementById('showHistoryBtn').addEventListener('click', () => openHistory(cls.id));
+    const emptyBtn = document.getElementById('emptyAddStudentsBtn');
+    if (emptyBtn) emptyBtn.addEventListener('click', () => openManage(cls.id));
+
+    if (rosterCount > 0 && session) renderLadder(cls, session);
+    updateUndoButton(session);
+  }
+
+  function renderLadder(cls, session) {
+    const ladder = document.getElementById('ladder');
+    if (!ladder) return;
+    const top = maxLevel(session);
+    const showUpTo = top + 1;
+    ladder.innerHTML = '';
+
+    for (let lvl = 1; lvl <= showUpTo; lvl++) {
+      const col = document.createElement('div');
+      col.className = 'column';
+      const ids = studentIdsAtLevel(session, lvl)
+        .sort((a, b) => nameFor(cls, a).localeCompare(nameFor(cls, b), 'fr'));
+
+      const head = document.createElement('div');
+      head.className = 'column-head';
+      head.innerHTML = `<span class="left"><span class="num">${lvl}</span><span class="label">Colonne ${lvl}</span></span>
+        <span class="count">${ids.length}</span>`;
+      col.appendChild(head);
+
+      const list = document.createElement('div');
+      list.className = 'chip-list';
+
+      if (ids.length === 0) {
+        const e = document.createElement('div');
+        e.className = 'col-empty';
+        e.textContent = lvl > top ? 'À conquérir…' : 'Personne ici';
+        list.appendChild(e);
+      } else {
+        ids.forEach((sid, i) => {
+          const chip = document.createElement('div');
+          chip.className = 'chip';
+          chip.innerHTML = `<span class="idx">${i + 1}</span><span class="nm">${escapeHtml(nameFor(cls, sid))}</span><span class="arrow">→</span>`;
+          chip.addEventListener('click', () => onWin(sid));
+          list.appendChild(chip);
+        });
+      }
+      col.appendChild(list);
+      ladder.appendChild(col);
+    }
+  }
+
+  function updateUndoButton(session) {
+    const btn = document.getElementById('undoBtn');
+    const has = session && session.history && session.history.length > 0;
+    btn.disabled = !has;
+    if (has) {
+      const cls = currentClass();
+      const last = session.history[session.history.length - 1];
+      btn.textContent = `↩️ Annuler : ${nameFor(cls, last.sid)} (col. ${last.to} → ${last.from})`;
+    } else {
+      btn.textContent = '↩️ Annuler';
+    }
+  }
+
+  // ---------- history modal ----------
+  function openHistory(classId) {
+    const cls = getClass(classId);
+    document.getElementById('historyClassName').textContent = cls.name;
+    const list = document.getElementById('sessionHistoryList');
+    const past = cls.sessions.slice().reverse(); // includes current session too, most recent first
+    if (past.length === 0) {
+      list.innerHTML = '<div style="color:var(--ink-soft);font-size:13.5px;">Aucune séance enregistrée.</div>';
+    } else {
+      list.innerHTML = past.map(sess => {
+        const top = maxLevel(sess);
+        let colsHtml = '';
+        for (let lvl = 1; lvl <= top; lvl++) {
+          const ids = studentIdsAtLevel(sess, lvl).sort((a,b)=>nameFor(cls,a).localeCompare(nameFor(cls,b),'fr'));
+          if (ids.length === 0) continue;
+          colsHtml += `<div class="sh-col"><b>Colonne ${lvl}</b> (${ids.length})
+            <div class="names">${ids.map(sid => escapeHtml(nameFor(cls, sid))).join(', ')}</div></div>`;
+        }
+        const isActive = sess.id === cls.activeSessionId;
+        return `<div class="session-history-item">
+          <div class="sh-head"><b>${escapeHtml(sess.label)}${isActive ? ' (en cours)' : ''}</b><span>${sess.history.length} match·s joué·s</span></div>
+          <div class="sh-cols">${colsHtml || '<span style="color:var(--ink-soft);font-size:12px;">Pas encore de victoire enregistrée.</span>'}</div>
+        </div>`;
+      }).join('');
+    }
+    document.getElementById('historyOverlay').classList.add('open');
+  }
+  document.getElementById('closeHistory').addEventListener('click', () => document.getElementById('historyOverlay').classList.remove('open'));
+  document.getElementById('historyOverlay').addEventListener('click', (e) => { if (e.target.id === 'historyOverlay') e.currentTarget.classList.remove('open'); });
+
+  // ---------- manage modal ----------
+  function openManage(classId) {
+    selectedClassForManage = classId;
+    const cls = getClass(classId);
+    document.getElementById('manageClassName').textContent = cls.name;
+    document.getElementById('bulkNames').value = '';
+    document.getElementById('importStatus').textContent = '';
+    document.getElementById('excelFile').value = '';
+    renderRoster();
+    document.getElementById('manageOverlay').classList.add('open');
+  }
+  document.getElementById('manageBtn').addEventListener('click', () => {
+    const cls = currentClass();
+    if (!cls) { alert('Crée d\'abord une classe.'); return; }
+    openManage(cls.id);
+  });
+  document.getElementById('closeManage').addEventListener('click', () => document.getElementById('manageOverlay').classList.remove('open'));
+  document.getElementById('manageOverlay').addEventListener('click', (e) => { if (e.target.id === 'manageOverlay') e.currentTarget.classList.remove('open'); });
+
+  function renderRoster() {
+    const cls = getClass(selectedClassForManage);
+    if (!cls) return;
+    const roster = document.getElementById('rosterList');
+    const ids = Object.keys(cls.roster).sort((a,b) => nameFor(cls,a).localeCompare(nameFor(cls,b), 'fr'));
+    document.getElementById('rosterCount').textContent = ids.length;
+    if (ids.length === 0) {
+      roster.innerHTML = '<div style="font-size:13px;color:var(--ink-soft);font-style:italic;">Personne pour l\'instant.</div>';
+      return;
+    }
+    const session = currentSession(cls);
+    roster.innerHTML = ids.map(sid => {
+      const lvl = session && session.students[sid] ? session.students[sid].level : '—';
+      return `<div class="roster-row"><span>${escapeHtml(nameFor(cls, sid))} — colonne ${lvl}</span><span class="rm" data-sid="${sid}">retirer</span></div>`;
+    }).join('');
+    roster.querySelectorAll('.rm').forEach(el => {
+      el.addEventListener('click', () => {
+        const sid = el.getAttribute('data-sid');
+        if (confirm(`Retirer ${nameFor(cls, sid)} de la classe ?`)) {
+          removeStudentFromRoster(cls.id, sid);
+          saveState();
+          renderRoster();
+          render();
+        }
+      });
+    });
+  }
+
+  document.getElementById('addBulkBtn').addEventListener('click', () => {
+    const cls = getClass(selectedClassForManage);
+    if (!cls) return;
+    const raw = document.getElementById('bulkNames').value;
+    const names = raw.split('\n').map(s => s.trim()).filter(Boolean);
+    const entries = names.map(n => ({ prenom: n, nom: '', sexe: '' }));
+    const added = addStudentsToRoster(cls.id, entries);
+    document.getElementById('bulkNames').value = '';
+    saveState();
+    renderRoster();
+    render();
+  });
+
+  document.getElementById('renameClassBtn').addEventListener('click', () => {
+    const cls = getClass(selectedClassForManage);
+    if (!cls) return;
+    const name = prompt('Nouveau nom de la classe :', cls.name);
+    if (name === null) return;
+    cls.name = name.trim() || cls.name;
+    document.getElementById('manageClassName').textContent = cls.name;
+    saveState(); render();
+  });
+
+  document.getElementById('deleteClassBtn').addEventListener('click', () => {
+    const cls = getClass(selectedClassForManage);
+    if (!cls) return;
+    if (!confirm(`Supprimer la classe "${cls.name}" et tout son historique ? Cette action est irréversible.`)) return;
+    delete state.classes[cls.id];
+    if (state.currentClassId === cls.id) {
+      const remaining = Object.keys(state.classes);
+      state.currentClassId = remaining.length ? remaining[0] : null;
+    }
+    document.getElementById('manageOverlay').classList.remove('open');
+    saveState(); render();
+  });
+
+  // ---------- excel import ----------
+  let xlsxLoaded = false;
+  function ensureXlsxLib(cb) {
+    if (xlsxLoaded || window.XLSX) { xlsxLoaded = true; cb(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => { xlsxLoaded = true; cb(); };
+    s.onerror = () => {
+      document.getElementById('importStatus').textContent = 'Impossible de charger la librairie de lecture Excel (vérifie la connexion internet).';
+      document.getElementById('importStatus').className = 'import-status err';
+    };
+    document.head.appendChild(s);
+  }
+
+  document.getElementById('excelFile').addEventListener('change', (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('importStatus');
+    statusEl.className = 'import-status';
+    statusEl.textContent = 'Lecture du fichier…';
+
+    ensureXlsxLib(() => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = window.XLSX.read(data, { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+          if (!rows.length) {
+            statusEl.className = 'import-status err';
+            statusEl.textContent = 'Le fichier semble vide.';
+            return;
+          }
+
+          // find column keys case-insensitively
+          const keys = Object.keys(rows[0]);
+          const findKey = (target) => keys.find(k => k.trim().toLowerCase() === target);
+          const nomKey = findKey('nom');
+          const prenomKey = findKey('prénom') || findKey('prenom');
+          const sexeKey = findKey('sexe');
+
+          if (!prenomKey) {
+            statusEl.className = 'import-status err';
+            statusEl.textContent = 'Colonne "Prénom" introuvable. Vérifie les en-têtes du fichier (Nom / Prénom / Sexe).';
+            return;
+          }
+
+          const entries = rows.map(r => ({
+            prenom: String(r[prenomKey] || '').trim(),
+            nom: nomKey ? String(r[nomKey] || '').trim() : '',
+            sexe: sexeKey ? String(r[sexeKey] || '').trim() : ''
+          })).filter(e => e.prenom);
+
+          const cls = getClass(selectedClassForManage);
+          const added = addStudentsToRoster(cls.id, entries);
+          saveState();
+          renderRoster();
+          render();
+
+          statusEl.className = 'import-status ok';
+          statusEl.textContent = `${added} élève(s) importé(s) sur ${entries.length} ligne(s) lue(s).`;
+        } catch (err) {
+          console.error(err);
+          statusEl.className = 'import-status err';
+          statusEl.textContent = 'Erreur de lecture du fichier. Vérifie qu\'il s\'agit bien d\'un fichier Excel valide.';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  });
+
+  // ---------- firebase ----------
+  document.getElementById('firebaseBtn').addEventListener('click', () => {
+    const cfg = localStorage.getItem(FIREBASE_CFG_KEY);
+    document.getElementById('firebaseConfigInput').value = cfg || '';
+    document.getElementById('firebaseStatus').textContent = fb.connected ? 'Connecté.' : 'Non connecté — les données restent en local uniquement.';
+    document.getElementById('firebaseStatus').className = 'import-status' + (fb.connected ? ' ok' : '');
+    document.getElementById('firebaseOverlay').classList.add('open');
+  });
+  document.getElementById('closeFirebase').addEventListener('click', () => document.getElementById('firebaseOverlay').classList.remove('open'));
+  document.getElementById('firebaseOverlay').addEventListener('click', (e) => { if (e.target.id === 'firebaseOverlay') e.currentTarget.classList.remove('open'); });
+
+  function loadFirebaseSdk(cb) {
+    if (window.firebase) { cb(); return; }
+    const s1 = document.createElement('script');
+    s1.src = `https://cdn.jsdelivr.net/npm/firebase@${FIREBASE_SDK_VERSION}/firebase-app-compat.js`;
+    s1.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = `https://cdn.jsdelivr.net/npm/firebase@${FIREBASE_SDK_VERSION}/firebase-database-compat.js`;
+      s2.onload = cb;
+      s2.onerror = () => setFirebaseError('Impossible de charger le module base de données Firebase.');
+      document.head.appendChild(s2);
+    };
+    s1.onerror = () => setFirebaseError('Impossible de charger le SDK Firebase (vérifie la connexion internet).');
+    document.head.appendChild(s1);
+  }
+
+  function setFirebaseError(msg) {
+    const el = document.getElementById('firebaseStatus');
+    el.className = 'import-status err';
+    el.textContent = msg;
+  }
+
+  function connectFirebase(configStr, silent) {
+    let cfg;
+    try { cfg = JSON.parse(configStr); }
+    catch (e) {
+      if (!silent) setFirebaseError('La configuration collée n\'est pas un JSON valide.');
+      return;
+    }
+    loadFirebaseSdk(() => {
+      try {
+        fb.app = window.firebase.initializeApp(cfg);
+        fb.db = window.firebase.database();
+        fb.connected = true;
+        localStorage.setItem(FIREBASE_CFG_KEY, configStr);
+        updateDbStatus();
+        if (!silent) {
+          const el = document.getElementById('firebaseStatus');
+          el.className = 'import-status ok';
+          el.textContent = 'Connexion réussie. Synchronisation en cours…';
+        }
+        // one-time fetch: prefer remote data if present, else push local up
+        fb.db.ref(FIREBASE_PATH).once('value').then(snap => {
+          const remote = snap.val();
+          if (remote && remote.classes && Object.keys(remote.classes).length > 0) {
+            state = remote;
+            saveLocal();
+            render();
+          } else {
+            fb.db.ref(FIREBASE_PATH).set(state);
+          }
+          if (!silent) {
+            const el = document.getElementById('firebaseStatus');
+            el.className = 'import-status ok';
+            el.textContent = 'Connecté et synchronisé.';
+          }
+        }).catch(err => {
+          console.error(err);
+          if (!silent) setFirebaseError('Connecté, mais la lecture des données a échoué (vérifie les règles de la base).');
+        });
+      } catch (e) {
+        console.error(e);
+        if (!silent) setFirebaseError('Configuration invalide ou projet inaccessible.');
+        fb.connected = false;
+        updateDbStatus();
+      }
+    });
+  }
+
+  document.getElementById('connectFirebaseBtn').addEventListener('click', () => {
+    const val = document.getElementById('firebaseConfigInput').value.trim();
+    if (!val) { setFirebaseError('Colle d\'abord la configuration Firebase.'); return; }
+    connectFirebase(val, false);
+  });
+  document.getElementById('disconnectFirebaseBtn').addEventListener('click', () => {
+    fb.connected = false;
+    fb.db = null;
+    localStorage.removeItem(FIREBASE_CFG_KEY);
+    updateDbStatus();
+    const el = document.getElementById('firebaseStatus');
+    el.className = 'import-status';
+    el.textContent = 'Déconnecté. Les données restent sauvegardées en local sur cet ordinateur.';
+  });
+
+  function updateDbStatus() {
+    const el = document.getElementById('dbStatus');
+    el.textContent = fb.connected ? '☁️ connecté' : '💾 local uniquement';
+  }
+
+  document.getElementById('undoBtn').addEventListener('click', undoLastWin);
+
+  // ---------- init ----------
+  loadLocal();
+  const savedCfg = localStorage.getItem(FIREBASE_CFG_KEY);
+  if (savedCfg) connectFirebase(savedCfg, true);
+  render();
+})();
+</script>
+</body>
+</html>
